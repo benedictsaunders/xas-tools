@@ -12,6 +12,7 @@ import glob
 import os
 import re
 import shutil
+from copy import copy
 
 import json
 import yaml
@@ -36,7 +37,6 @@ __maintainer_email__ = (
 )
 __date__ = "2023-10-31"
 __version__ = "0.1.1"
-
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -70,13 +70,18 @@ class CHPCalculation(object):
                    excitation from the 1s orbitals.
 
         """
-        self.structure = structure
+
         self.xas_element = Element(element)
         self.ch_n = n
         self.ch_l = ell
         self.ch_z = z
         self.hubb = U
         self.mgm = m
+
+        if structure.sites[0].label == element:
+            self.structure = self._reorder_sites(structure)
+        else:
+            self.structure = structure
         self.atoms = [
             (i, s) for i, s in enumerate(structure) if s.specie == self.xas_element
         ]
@@ -91,6 +96,31 @@ class CHPCalculation(object):
 
     def __str__(self):
         return
+
+    def _reorder_sites(self, strcuture):
+        """
+        Reordering the input so that the target element is not first in the list. PMG groups elements automatically,
+        and we should keep them separate as per the VASP XAS instructions. E.g. Fe as the target, Fe-Nb-O would be reordered to
+        Nb-Fe-O so the final output POSCAR has the ordering Fe-Nb-Fe-O.
+
+        """
+        sites = structure.sites.copy()
+        elem_ordering = []
+        idx = 0
+        elem_ordering.append(sites[0].label)
+        for s in sites[1:]:
+            if elem_ordering[idx] != s.label:
+                elem_ordering.append(s.label)
+                idx += 1
+        elem_ordering[0], elem_ordering[1] = elem_ordering[1], elem_ordering[0]
+        if len(elem_ordering) == 1:
+            print(
+                """Consider manually changing the input files before your run. PyMatGen automatically\n
+                    groups elements in the POSCAR format, so the required separations for XAS inputs on\n
+                    POSCAR lines 6 and 7 will not be generated properly for single element compositions."""
+            )
+        sites.sort(key=lambda x: elem_ordering.index(x.label))
+        return Structure.from_sites(sites)
 
     def _check_equivalent_atoms(self):
         """
