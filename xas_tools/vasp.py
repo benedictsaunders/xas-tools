@@ -97,7 +97,7 @@ class CHPCalculation(object):
     def __str__(self):
         return
 
-    def _reorder_sites(self, strcuture):
+    def _reorder_sites(self, structure):
         """
         Reordering the input so that the target element is not first in the list. PMG groups elements automatically,
         and we should keep them separate as per the VASP XAS instructions. E.g. Fe as the target, Fe-Nb-O would be reordered to
