@@ -12,7 +12,6 @@ import glob
 import os
 import re
 import shutil
-from copy import copy
 
 import json
 import yaml
@@ -83,7 +82,7 @@ class CHPCalculation(object):
         else:
             self.structure = structure
         self.atoms = [
-            (i, s) for i, s in enumerate(structure) if s.specie == self.xas_element
+            (i, s) for i, s in enumerate(self.structure) if s.specie == self.xas_element
         ]
         self.equivalent_atoms = self._check_equivalent_atoms()
         self.weights = [len(group) for group in self.equivalent_atoms]
